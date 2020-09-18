@@ -1,7 +1,7 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
+
+from . import util
 
 
 def passive(data: pd.DataFrame) -> np.ndarray:
@@ -10,9 +10,24 @@ def passive(data: pd.DataFrame) -> np.ndarray:
 
 
 def sma(data: pd.DataFrame) -> np.ndarray:
-    """ Uses simple moving averages to determine signals. """
+    """ Uses simple moving averages to generate positions. """
     short: int = 50
     long: int = 200
-    data['SMA1'] = data['Price'].rolling(short).mean()
-    data['SMA2'] = data['Price'].rolling(long).mean()
-    return np.where(data['SMA1'] > data['SMA2'], 1, -1)
+    sma1 = util.sma(data['Price'], short)
+    sma2 = util.sma(data['Price'], long)
+    return np.where(sma1 > sma2, 1, -1)
+
+
+def momentum(data: pd.DataFrame) -> np.ndarray:
+    """ Uses momentum based signals to generate positions. """
+    length: int = 10
+    return np.sign(data['Price'].rolling(length).mean())
+
+
+def mean_reverse(data: pd.DataFrame) -> np.ndarray:
+    """ Uses mean reversion to generate positions. """
+    period: int = 25
+    threshold: float = 3.5
+    sma: np.ndarray = util.sma(data['Price'], period)
+    distance: np.ndarray = data['Price'] - sma
+    return np.where(distance > threshold, -1, 1)
